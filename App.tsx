@@ -11,6 +11,8 @@ import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
+  Linking,
+  Modal,
   Platform,
   Pressable,
   SafeAreaView,
@@ -85,6 +87,7 @@ type StudyPhase = "reading" | "question" | "answer" | "done";
 
 const MATERIALS_STORAGE_KEY = "beiguo_materials_v1";
 const REMINDERS_STORAGE_KEY = "beiguo_reminders_v1";
+const PRIVACY_ACCEPTED_STORAGE_KEY = "beiguo_privacy_accepted_v1";
 const QUESTION_API_URL = process.env.EXPO_PUBLIC_QUESTION_API_URL || "";
 
 const defaultReminderTimes: ReminderTime[] = [
@@ -209,6 +212,9 @@ const parseReminderInput = (value: string) => {
 
 const sortReminders = (items: ReminderTime[]) =>
   [...items].sort((a, b) => a.hour * 60 + a.minute - (b.hour * 60 + b.minute));
+
+const PRIVACY_URL = "https://reciteflow-ios-k96j.vercel.app/privacy.html";
+const TERMS_URL = "https://reciteflow-ios-k96j.vercel.app/terms.html";
 
 const parseMarkdownToCards = (markdown: string, pace: number) => {
   const text = normalizeText(markdown);
@@ -564,6 +570,8 @@ export default function App() {
   const [recognizing, setRecognizing] = useState(false);
   const [liveTranscript, setLiveTranscript] = useState("");
   const [voiceAvailable, setVoiceAvailable] = useState<boolean | null>(null);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  const [privacyLoaded, setPrivacyLoaded] = useState(false);
   const hasLoadedStorage = useRef(false);
   const studyCardIdRef = useRef<string | null>(null);
 
@@ -606,6 +614,14 @@ export default function App() {
     } catch {
       setVoiceAvailable(false);
     }
+  }, []);
+
+  useEffect(() => {
+    AsyncStorage.getItem(PRIVACY_ACCEPTED_STORAGE_KEY)
+      .then((value) => {
+        setPrivacyAccepted(value === "true");
+      })
+      .finally(() => setPrivacyLoaded(true));
   }, []);
 
   useEffect(() => {
@@ -670,6 +686,19 @@ export default function App() {
       })
       .catch(() => setNotificationStatus("排程失败"));
   }, [reminders]);
+
+  const openExternalPage = async (url: string) => {
+    try {
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert("无法打开链接", url);
+    }
+  };
+
+  const acceptPrivacy = async () => {
+    await AsyncStorage.setItem(PRIVACY_ACCEPTED_STORAGE_KEY, "true");
+    setPrivacyAccepted(true);
+  };
 
   useEffect(() => {
     if (!activeCard || studyPhase !== "reading") return;
@@ -1398,6 +1427,28 @@ export default function App() {
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar style="dark" />
+      <Modal visible={privacyLoaded && !privacyAccepted} transparent animationType="fade">
+        <View style={styles.modalScrim}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>隐私政策提示</Text>
+            <Text style={styles.modalText}>
+              欢迎使用背过。为保障你的个人信息与使用权益，请你在使用前认真阅读《隐私政策》和《服务条款》。
+              你点击“同意并继续”后，我们才会继续提供学习记录、提醒与语音等功能。
+            </Text>
+            <View style={styles.buttonRow}>
+              <SecondaryButton label="查看隐私政策" onPress={() => openExternalPage(PRIVACY_URL)} />
+              <SecondaryButton label="查看服务条款" onPress={() => openExternalPage(TERMS_URL)} />
+            </View>
+            <View style={styles.buttonRow}>
+              <SecondaryButton
+                label="暂不同意"
+                onPress={() => Alert.alert("需要同意后才能继续使用", "请阅读并同意隐私政策与服务条款。")}
+              />
+              <PrimaryButton label="同意并继续" onPress={acceptPrivacy} />
+            </View>
+          </View>
+        </View>
+      </Modal>
       <View style={styles.header}>
         <View>
           <Text style={styles.brand}>背过</Text>
@@ -1882,6 +1933,27 @@ const styles = StyleSheet.create({
     color: "#142233",
     fontWeight: "800",
     marginBottom: 8,
+  },
+  modalScrim: {
+    flex: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.48)",
+    justifyContent: "center",
+    padding: 20,
+  },
+  modalCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    padding: 18,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#142233",
+  },
+  modalText: {
+    marginTop: 12,
+    color: "#445366",
+    lineHeight: 22,
   },
   nav: {
     position: "absolute",

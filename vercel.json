@@ -1,33 +1,10 @@
 {
-  "version": 2,
   "cleanUrls": false,
   "trailingSlash": false,
-  "builds": [
+  "rewrites": [
     {
-      "src": "dist/**",
-      "use": "@vercel/static"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/privacy.html",
-      "dest": "/dist/privacy.html"
-    },
-    {
-      "src": "/terms.html",
-      "dest": "/dist/terms.html"
-    },
-    {
-      "src": "/favicon.ico",
-      "dest": "/dist/favicon.ico"
-    },
-    {
-      "src": "/_expo/(.*)",
-      "dest": "/dist/_expo/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/dist/index.html"
+      "source": "/((?!_expo/|favicon.ico|privacy.html|terms.html).*)",
+      "destination": "/index.html"
     }
   ]
 }

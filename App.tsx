@@ -974,6 +974,16 @@ export default function App() {
     setLiveTranscript("");
   };
 
+  const nextQuestionFromAnswer = () => {
+    if (studyQuestionIndex + 1 >= studyQuestions.length) {
+      return;
+    }
+    setStudyQuestionIndex((prev) => prev + 1);
+    setStudyPhase("question");
+    setAnswer("");
+    setLiveTranscript("");
+  };
+
   const scoreCard = (score: number) => {
     if (!activeCard || !selectedMaterial) return;
     const today = todayISO();
@@ -1302,11 +1312,22 @@ export default function App() {
         <Text style={styles.answerTitle}>参考答案</Text>
         <MarkdownBlock content={activeQuestion?.answer || activeCard?.content || ""} />
       </View>
-      <View style={styles.scoreRow}>
-        <ScoreButton label="生疏" color="#d66755" onPress={() => scoreCard(1)} />
-        <ScoreButton label="一般" color="#d6a228" onPress={() => scoreCard(3)} />
-        <ScoreButton label="熟练" color="#1f9a5f" onPress={() => scoreCard(5)} />
+      <View style={styles.answerReference}>
+        <Text style={styles.answerTitle}>原文</Text>
+        <MarkdownBlock content={activeCard?.content || ""} />
       </View>
+      {studyQuestionIndex + 1 < studyQuestions.length ? (
+        <View style={styles.buttonRow}>
+          <SecondaryButton label="回到题目" onPress={() => setStudyPhase("question")} />
+          <PrimaryButton label="下一题" onPress={nextQuestionFromAnswer} />
+        </View>
+      ) : (
+        <View style={styles.scoreRow}>
+          <ScoreButton label="生疏" color="#d66755" onPress={() => scoreCard(1)} />
+          <ScoreButton label="一般" color="#d6a228" onPress={() => scoreCard(3)} />
+          <ScoreButton label="熟练" color="#1f9a5f" onPress={() => scoreCard(5)} />
+        </View>
+      )}
     </>
   );
 

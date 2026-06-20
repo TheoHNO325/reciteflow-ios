@@ -85,8 +85,7 @@ type StudyPhase = "reading" | "question" | "answer" | "done";
 
 const MATERIALS_STORAGE_KEY = "beiguo_materials_v1";
 const REMINDERS_STORAGE_KEY = "beiguo_reminders_v1";
-const DEEPSEEK_API_URL = "https://api.deepseek.com/chat/completions";
-const DEEPSEEK_API_KEY = process.env.EXPO_PUBLIC_DEEPSEEK_API_KEY || "";
+const QUESTION_API_URL = process.env.EXPO_PUBLIC_QUESTION_API_URL || "";
 
 const defaultReminderTimes: ReminderTime[] = [
   { id: "09-00", hour: 9, minute: 0, enabled: true },
@@ -837,48 +836,30 @@ export default function App() {
     const localQuestions = buildLocalQuestionSet(card);
     setStudyQuestions(localQuestions);
 
-    if (!DEEPSEEK_API_KEY) {
+    if (!QUESTION_API_URL) {
       return;
     }
 
     try {
       setQuestionLoading(true);
-      const response = await fetch(DEEPSEEK_API_URL, {
+      const response = await fetch(QUESTION_API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
         },
         body: JSON.stringify({
-          model: "deepseek-chat",
-          temperature: 0.4,
-          messages: [
-            {
-              role: "system",
-              content:
-                "你是一个出题助手。请根据给定的知识卡片内容，按内容块生成多个简洁问题。输出严格 JSON 数组，每个元素包含 prompt 和 answer 两个字段。每个 answer 必须对应原文中的一个块，不要遗漏，不要杜撰。",
-            },
-            {
-              role: "user",
-              content: JSON.stringify({
-                title: card.title,
-                source: card.source.sectionPath,
-                chunks: splitCardContent(card.content),
-              }),
-            },
-          ],
-          response_format: { type: "json_object" },
+          title: card.title,
+          source: card.source.sectionPath,
+          chunks: splitCardContent(card.content),
         }),
       });
 
       if (!response.ok) {
-        throw new Error(`LLM 请求失败：${response.status}`);
+        throw new Error(`LLM request failed: ${response.status}`);
       }
 
       const data = await response.json();
-      const raw = data?.choices?.[0]?.message?.content;
-      const parsed = JSON.parse(raw || "{}");
-      const items = Array.isArray(parsed?.questions) ? parsed.questions : Array.isArray(parsed) ? parsed : null;
+      const items = Array.isArray(data?.questions) ? data.questions : Array.isArray(data) ? data : null;
 
       if (items?.length) {
         const nextQuestions = items

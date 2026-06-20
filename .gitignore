@@ -29,9 +29,13 @@ yarn-error.*
 # macOS
 .DS_Store
 *.pem
+SIGNING_INFO_LOCAL.md
 
 # local env files
-.env*.local
+.env
+.env.*
+!.env.example
+!.env*.local
 
 # typescript
 *.tsbuildinfo
@@ -39,3 +43,5 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+.vercel

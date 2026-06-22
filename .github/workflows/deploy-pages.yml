@@ -34,6 +34,7 @@ jobs:
         run: npx expo export --platform web
         env:
           EXPO_PUBLIC_BASE_PATH: /reciteflow-ios
+          EXPO_PUBLIC_QUESTION_API_URL: ${{ vars.EXPO_PUBLIC_QUESTION_API_URL }}
 
       - name: Prepare Pages files
         run: |
